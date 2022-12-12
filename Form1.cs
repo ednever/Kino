@@ -21,14 +21,17 @@ namespace Kino___Cinema
         SqlDataAdapter adapter;
         DataTable dt;
         DataGridView dataGridView;
+        FlowLayoutPanel body;
         public Form1()
         {
             this.components = new Container();
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(500, 500);
             this.Text = "TOP Cinema - Home";
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
 
-            FlowLayoutPanel menu = new FlowLayoutPanel
+            FlowLayoutPanel head = new FlowLayoutPanel
             {
                 Location = new Point(0, 0),
                 Size = new Size(500, 100),
@@ -36,9 +39,15 @@ namespace Kino___Cinema
                 FlowDirection = FlowDirection.LeftToRight,
             };
 
+            body = new FlowLayoutPanel
+            {
+                Location = new Point(0, 100),
+                Size = new Size(500, 400),
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoScroll = true,
+            };
 
 
-            
             for (int i = 0; i < labelTexts.Length; i++)
             {
                 Label label = new Label
@@ -56,13 +65,14 @@ namespace Kino___Cinema
                 label.MouseEnter += Label_MouseEnter;
                 label.MouseLeave += Label_MouseLeave;
 
-                menu.Controls.Add(label);
+                head.Controls.Add(label);
             }
 
 
 
             
-            this.Controls.Add(menu);
+            this.Controls.Add(head);
+            this.Controls.Add(body);
         }
 
         void Label_MouseLeave(object sender, EventArgs e)
@@ -96,6 +106,7 @@ namespace Kino___Cinema
         void Label_Click(object sender, EventArgs e)
         {
             Label pablo = (Label)sender;
+            body.Controls.Clear();
             if (pablo.Text == labelTexts[0]) //Avaleht
             {
 
@@ -123,21 +134,69 @@ namespace Kino___Cinema
                 adapter = new SqlDataAdapter(cmd);
                 dt = new DataTable();
                 adapter.Fill(dt);
-                dataGridView = new DataGridView()
+
+                List<string> pildid = new List<string>();
+                foreach (DataRow nimetus in dt.Rows)
                 {
-                    Location = new Point(0, 100),
-                    Size = new Size(500, 45),
-                    RowHeadersVisible = false,
-                    CellBorderStyle = DataGridViewCellBorderStyle.None,
-                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                    ReadOnly = true,
-                    ScrollBars = ScrollBars.None,
+                    pildid.Add(nimetus["Pilt"].ToString());
+                }
+                
+                for (int i = 0; i < 3; i++) //dt.Rows.Count
+                {                    
+                    cmd = new SqlCommand("SELECT Nimetus, Zanr, Pikkus, Keel FROM Filmid WHERE ID = " + (i * 2 + 8).ToString(), connect);
+                    adapter = new SqlDataAdapter(cmd);
+                    dt = new DataTable();
+                    adapter.Fill(dt);
 
-                    DataSource = dt,
+                    //foreach (DataRow nimetus in dt.Rows)
+                    //{
+                    //    Label label = new Label()
+                    //    {
+                    //        Text = "!!!",
+                    //    };
 
-                };
-                this.Controls.Add(dataGridView);
+                    //    Label label2 = new Label()
+                    //    {
+                    //        Text = nimetus["Nimetus"].ToString(),
+                    //    };
+                    //}
+                    PictureBox picture = new PictureBox()
+                    {
+                        Size = new Size(200,200),
+                        SizeMode = PictureBoxSizeMode.StretchImage,
+                    };
+                    picture.Load("../../Images/Filmid/" + pildid[i]);
+                    
+                    body.Controls.Add(picture);
 
+                    dataGridView = new DataGridView()
+                    {
+                        Location = new Point(0, 100),
+                        Size = new Size(400, 45),
+                        RowHeadersVisible = false,
+                        CellBorderStyle = DataGridViewCellBorderStyle.None,
+                        SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                        Enabled = false,
+                        //ReadOnly = true,
+                        ScrollBars = ScrollBars.None,
+
+                        DataSource = dt,
+                    };
+
+                    body.Controls.Add(dataGridView);
+                }
+                
+
+
+
+
+
+
+
+
+
+
+                //this.Controls.Add(dataGridView);
             }
         }
         void emailSend()
@@ -168,8 +227,6 @@ namespace Kino___Cinema
                 // email address as the user name.
                 oServer.User = "edgar.neverovski@hotmail.com";
 
-                // If you got authentication error, try to create an app password instead of your user password.
-                https://support.microsoft.com/en-us/account-billing/using-app-passwords-with-apps-that-don-t-support-two-step-verification-5896ed9b-4263-e681-128a-a6f2979a7944 
                 oServer.Password = "qawsedrf1";
 
                 // use 587 TLS port
