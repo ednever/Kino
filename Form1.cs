@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
-//using EASendMail;
+using EASendMail;
 
 namespace Kino___Cinema
 {
@@ -16,8 +16,8 @@ namespace Kino___Cinema
     {
         string[] labelTexts = new string[] { "TOP Cinema", "Kava", "Filmid" };
         int[] fontSizes = new int[] { 30, 15, 15 };
-        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
-        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
         SqlCommand cmd;
         SqlDataAdapter adapter;
         DataGridView dataGridView;
@@ -141,6 +141,7 @@ namespace Kino___Cinema
                     adapter.Fill(dt);
                     PictureBox picture = new PictureBox()
                     {
+                        Text = (i + 1).ToString(),
                         Size = new Size(200, 300),
                         SizeMode = PictureBoxSizeMode.StretchImage,
                     };
@@ -210,60 +211,115 @@ namespace Kino___Cinema
 
         void Picture_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("UUUU");
+            PictureBox pilt = (PictureBox)sender;
+            string a = pilt.Text;
+            body.Controls.Clear();
+
+            cmd = new SqlCommand("SELECT Nimetus, Keel, Kuupaev, Aeg, Pikkus, Saal, Kohad, VabuKohti FROM Seanss " +
+                "INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID " +
+                "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
+                "INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID " +
+                "WHERE Seanss.ID = " + a, connect);
+
+            adapter = new SqlDataAdapter(cmd);
+            DataTable dt_abi = new DataTable();
+            adapter.Fill(dt_abi);
+
+            foreach (DataRow nimetus in dt_abi.Rows)
+            {
+                int b = int.Parse(nimetus["Kohad"].ToString()) * int.Parse(nimetus["Kohad"].ToString());
+                cmd = new SqlCommand("UPDATE Seans SET VabuKohti = " + b.ToString() + " WHERE Seanss.ID = " + a, connect); //Починить
+            }
+
+            cmd = new SqlCommand("SELECT Nimetus, Keel, Kuupaev, Aeg, Pikkus, Saal, VabuKohti FROM Seanss " +
+                "INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID " +
+                "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
+                "INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID " +
+                "WHERE Seanss.ID = " + a, connect);
+
+            adapter = new SqlDataAdapter(cmd);
+            DataTable dt = new DataTable();
+            adapter.Fill(dt);
+
+            dataGridView = new DataGridView()
+            {
+                Size = new Size(500, 75),
+                DataSource = dt,
+            };
+            body.Controls.Add(dataGridView);
+
+            /** Выбор мест */
+            TableLayoutPanel tableLayoutPanel = new TableLayoutPanel()
+            {
+
+            };
+
+            for (int i = 0; i < 10; i++) //int.Parse(nimetus["Kohad"].ToString())
+            {
+                tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+                for (int j = 0; j < 10; j++) //int.Parse(nimetus["Kohad"].ToString())
+                {
+                    tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+                    PictureBox pictureBox = new PictureBox();
+                    pictureBox.Load(@"../../Images/istukoht.png");
+
+                    tableLayoutPanel.Controls.Add(pictureBox, j, i);
+                }               
+            }            
+            body.Controls.Add(tableLayoutPanel);
         }
-        //void emailSend()
-        //{ 
-        //    try
-        //    {
-        //        SmtpMail oMail = new SmtpMail("TryIt");
+        void emailSend()
+        {
+            try
+            {
+                SmtpMail oMail = new SmtpMail("TryIt");
 
-        //        // Your email address
-        //        oMail.From = "edgar.neverovski@hotmail.com";
+                // Your email address
+                oMail.From = "edgar.neverovski@hotmail.com";
 
-        //        // Set recipient email address
-        //        oMail.To = "edgarneverovskij@gmail.com";
+                // Set recipient email address
+                oMail.To = "edgarneverovskij@gmail.com";
 
-        //        // Set email subject
-        //        oMail.Subject = "test email from hotmail, outlook, office 365 account";
+                // Set email subject
+                oMail.Subject = "test email from hotmail, outlook, office 365 account";
 
-        //        // Set email body
-        //        oMail.TextBody = "this is a test email sent from c# project using hotmail.";
+                // Set email body
+                oMail.TextBody = "this is a test email sent from c# project using hotmail.";
 
-        //        // Hotmail/Outlook SMTP server address
-        //        SmtpServer oServer = new SmtpServer("smtp.office365.com");
+                // Hotmail/Outlook SMTP server address
+                SmtpServer oServer = new SmtpServer("smtp.office365.com");
 
-        //        // If your account is office 365, please change to Office 365 SMTP server
-        //        // SmtpServer oServer = new SmtpServer("smtp.office365.com");
+                // If your account is office 365, please change to Office 365 SMTP server
+                // SmtpServer oServer = new SmtpServer("smtp.office365.com");
 
-        //        // User authentication should use your
-        //        // email address as the user name.
-        //        oServer.User = "edgar.neverovski@hotmail.com";
+                // User authentication should use your
+                // email address as the user name.
+                oServer.User = "edgar.neverovski@hotmail.com";
 
-        //        oServer.Password = "qawsedrf1";
+                oServer.Password = "qawsedrf1";
 
-        //        // use 587 TLS port
-        //        oServer.Port = 587;
+                // use 587 TLS port
+                oServer.Port = 587;
 
-        //        // detect SSL/TLS connection automatically
-        //        oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
+                // detect SSL/TLS connection automatically
+                oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
 
-        //        MessageBox.Show("start to send email over TLS...");
+                MessageBox.Show("start to send email over TLS...");
 
-        //        SmtpClient oSmtp = new SmtpClient();
-        //        oSmtp.SendMail(oServer, oMail);
+                SmtpClient oSmtp = new SmtpClient();
+                oSmtp.SendMail(oServer, oMail);
 
-        //        MessageBox.Show("email was sent successfully!");
-        //    }
-        //    catch (Exception ep)
-        //    {
-        //        MessageBox.Show("failed to send email with the following error:");
-        //        MessageBox.Show(ep.Message);
-        //    }
-        //    /**
-        //     * edgar.neverovski@hotmail.com
-        //     * qawsedrf1
-        //     */
-        //}
+                MessageBox.Show("email was sent successfully!");
+            }
+            catch (Exception ep)
+            {
+                MessageBox.Show("failed to send email with the following error:");
+                MessageBox.Show(ep.Message);
+            }
+            /**
+             * edgar.neverovski@hotmail.com
+             * qawsedrf1
+             */
+        }
     }
 }
