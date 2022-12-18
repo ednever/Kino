@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
-using EASendMail;
+//using EASendMail;
 
 namespace Kino___Cinema
 {
@@ -16,12 +16,16 @@ namespace Kino___Cinema
     {
         string[] labelTexts = new string[] { "TOP Cinema", "Kava", "Filmid" };
         int[] fontSizes = new int[] { 30, 15, 15 };
-        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
-        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
         SqlCommand cmd;
         SqlDataAdapter adapter;
         DataGridView dataGridView;
         FlowLayoutPanel body;
+
+        Label Kogus; //>>>>>>>>
+        Button minus, plus;
+
         public Form1()
         {
             this.components = new Container();
@@ -65,15 +69,10 @@ namespace Kino___Cinema
                 label.MouseLeave += Label_MouseLeave;
 
                 head.Controls.Add(label);
-            }
-
-
-
-            
+            }     
             this.Controls.Add(head);
             this.Controls.Add(body);
         }
-
         void Label_MouseLeave(object sender, EventArgs e)
         {
             Label pablo = (Label)sender;
@@ -208,7 +207,6 @@ namespace Kino___Cinema
                 }
             }
         }
-
         void Picture_Click(object sender, EventArgs e)
         {
             PictureBox pilt = (PictureBox)sender;
@@ -248,78 +246,147 @@ namespace Kino___Cinema
             };
             body.Controls.Add(dataGridView);
 
+            Label piletiNimi = new Label();
+            piletiNimi.Text = "Tavapilet";
+
+            Label piletiHind = new Label();
+            piletiHind.Text = "10€";
+
+            Kogus = new Label();
+            Kogus.Text = "0";
+
+            minus = new Button();
+            minus.Text = "-";
+            minus.Click += Button_Click;
+            minus.Enabled = false;
+
+            plus = new Button();
+            plus.Text = "+";
+            plus.Click += Button_Click;
+
+            Button valiKohad = new Button();
+            valiKohad.Text = "Vali kohad";
+            valiKohad.Click += Button_Click;
+
+            body.Controls.Add(piletiNimi);
+            body.Controls.Add(piletiHind);
+            body.Controls.Add(minus);
+            body.Controls.Add(Kogus);
+            body.Controls.Add(plus);
+            body.Controls.Add(valiKohad);
+
+
             /** Выбор мест */
-            TableLayoutPanel tableLayoutPanel = new TableLayoutPanel()
-            {
+            //TableLayoutPanel tableLayoutPanel = new TableLayoutPanel()
+            //{
 
-            };
+            //};
 
-            for (int i = 0; i < 10; i++) //int.Parse(nimetus["Kohad"].ToString())
-            {
-                tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-                for (int j = 0; j < 10; j++) //int.Parse(nimetus["Kohad"].ToString())
-                {
-                    tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
-                    PictureBox pictureBox = new PictureBox();
-                    pictureBox.Load(@"../../Images/istukoht.png");
+            //for (int i = 0; i < 10; i++) //int.Parse(nimetus["Kohad"].ToString())
+            //{
+            //    tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            //    for (int j = 0; j < 10; j++) //int.Parse(nimetus["Kohad"].ToString())
+            //    {
+            //        tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+            //        PictureBox pictureBox = new PictureBox();
+            //        pictureBox.Load(@"../../Images/istukoht.png");
 
-                    tableLayoutPanel.Controls.Add(pictureBox, j, i);
-                }               
-            }            
-            body.Controls.Add(tableLayoutPanel);
+            //        tableLayoutPanel.Controls.Add(pictureBox, j, i);
+            //    }               
+            //}            
+            //body.Controls.Add(tableLayoutPanel);
         }
-        void emailSend()
+
+        void Button_Click(object sender, EventArgs e)
         {
-            try
+            Button but = (Button)sender;
+            if (Kogus.Text == "0")
             {
-                SmtpMail oMail = new SmtpMail("TryIt");
-
-                // Your email address
-                oMail.From = "edgar.neverovski@hotmail.com";
-
-                // Set recipient email address
-                oMail.To = "edgarneverovskij@gmail.com";
-
-                // Set email subject
-                oMail.Subject = "test email from hotmail, outlook, office 365 account";
-
-                // Set email body
-                oMail.TextBody = "this is a test email sent from c# project using hotmail.";
-
-                // Hotmail/Outlook SMTP server address
-                SmtpServer oServer = new SmtpServer("smtp.office365.com");
-
-                // If your account is office 365, please change to Office 365 SMTP server
-                // SmtpServer oServer = new SmtpServer("smtp.office365.com");
-
-                // User authentication should use your
-                // email address as the user name.
-                oServer.User = "edgar.neverovski@hotmail.com";
-
-                oServer.Password = "qawsedrf1";
-
-                // use 587 TLS port
-                oServer.Port = 587;
-
-                // detect SSL/TLS connection automatically
-                oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
-
-                MessageBox.Show("start to send email over TLS...");
-
-                SmtpClient oSmtp = new SmtpClient();
-                oSmtp.SendMail(oServer, oMail);
-
-                MessageBox.Show("email was sent successfully!");
+                minus.Enabled = false;
             }
-            catch (Exception ep)
+            else if (Kogus.Text == "5")
             {
-                MessageBox.Show("failed to send email with the following error:");
-                MessageBox.Show(ep.Message);
+                plus.Enabled = false;
             }
-            /**
-             * edgar.neverovski@hotmail.com
-             * qawsedrf1
-             */
+            else
+            {
+                minus.Enabled = true;
+                plus.Enabled = true;
+            }
+
+            if (but.Text == "+")
+            {
+                Kogus.Text = (int.Parse(Kogus.Text) + 1).ToString();
+                if (Kogus.Text == "5")
+                {
+                    plus.Enabled = false;
+                }
+            }
+            else if (but.Text == "-")
+            {
+                Kogus.Text = (int.Parse(Kogus.Text) - 1).ToString();
+                if (Kogus.Text == "0")
+                {
+                    minus.Enabled = false;
+                }
+            }
+            else if (but.Text == "Vali kohad") //поставить блокировку если билетов 0
+            {
+                body.Controls.Clear();
+            }
         }
+        //void emailSend()
+        //{
+        //    try
+        //    {
+        //        SmtpMail oMail = new SmtpMail("TryIt");
+
+        //        // Your email address
+        //        oMail.From = "edgar.neverovski@hotmail.com";
+
+        //        // Set recipient email address
+        //        oMail.To = "edgarneverovskij@gmail.com";
+
+        //        // Set email subject
+        //        oMail.Subject = "test email from hotmail, outlook, office 365 account";
+
+        //        // Set email body
+        //        oMail.TextBody = "this is a test email sent from c# project using hotmail.";
+
+        //        // Hotmail/Outlook SMTP server address
+        //        SmtpServer oServer = new SmtpServer("smtp.office365.com");
+
+        //        // If your account is office 365, please change to Office 365 SMTP server
+        //        // SmtpServer oServer = new SmtpServer("smtp.office365.com");
+
+        //        // User authentication should use your
+        //        // email address as the user name.
+        //        oServer.User = "edgar.neverovski@hotmail.com";
+
+        //        oServer.Password = "qawsedrf1";
+
+        //        // use 587 TLS port
+        //        oServer.Port = 587;
+
+        //        // detect SSL/TLS connection automatically
+        //        oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
+
+        //        MessageBox.Show("start to send email over TLS...");
+
+        //        SmtpClient oSmtp = new SmtpClient();
+        //        oSmtp.SendMail(oServer, oMail);
+
+        //        MessageBox.Show("email was sent successfully!");
+        //    }
+        //    catch (Exception ep)
+        //    {
+        //        MessageBox.Show("failed to send email with the following error:");
+        //        MessageBox.Show(ep.Message);
+        //    }
+        //    /**
+        //     * edgar.neverovski@hotmail.com
+        //     * qawsedrf1
+        //     */
+        //}
     }
 }
