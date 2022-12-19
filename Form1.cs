@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
-using EASendMail;
+//using EASendMail;
 
 namespace Kino___Cinema
 {
@@ -16,16 +16,29 @@ namespace Kino___Cinema
     {
         string[] labelTexts = new string[] { "TOP Cinema", "Kava", "Filmid" };
         int[] fontSizes = new int[] { 30, 15, 15 };
-        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
-        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
         SqlCommand cmd;
         SqlDataAdapter adapter;
         DataGridView dataGridView;
-        FlowLayoutPanel body;
+        public FlowLayoutPanel body;
 
-        Label Kogus; //>>>>>>>>
+        Label Kogus; 
         Button minus, plus;
 
+        Saal saal = new Saal();
+        Piletid pilet = new Piletid();
+
+        Button maksa;
+
+        TableLayoutPanel tableLayoutPanel;
+
+        string email;
+        public string Email
+        {
+            get { return email; }
+            set { email = value; }
+        }
         public Form1()
         {
             this.components = new Container();
@@ -34,6 +47,7 @@ namespace Kino___Cinema
             this.Text = "TOP Cinema - Home";
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            
 
             FlowLayoutPanel head = new FlowLayoutPanel
             {
@@ -49,7 +63,7 @@ namespace Kino___Cinema
                 FlowDirection = FlowDirection.LeftToRight,
                 
                 AutoScroll = true,
-            };
+            };         
 
             for (int i = 0; i < labelTexts.Length; i++)
             {
@@ -72,6 +86,14 @@ namespace Kino___Cinema
             }     
             this.Controls.Add(head);
             this.Controls.Add(body);
+
+            PictureBox picture = new PictureBox()
+            {
+                Size = new Size(500, 450),
+                SizeMode = PictureBoxSizeMode.StretchImage,
+            };
+            picture.Load("../../Images/Logo.png");
+            body.BackgroundImage = picture.Image;
         }
         void Label_MouseLeave(object sender, EventArgs e)
         {
@@ -211,22 +233,28 @@ namespace Kino___Cinema
         {
             PictureBox pilt = (PictureBox)sender;
             string a = pilt.Text;
+            pilet.Seanss = a;
             body.Controls.Clear();
 
-            cmd = new SqlCommand("SELECT Nimetus, Keel, Kuupaev, Aeg, Pikkus, Saal, Kohad, VabuKohti FROM Seanss " +
-                "INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID " +
+            cmd = new SqlCommand("SELECT Rows, Kohad, VabuKohti FROM Seanss " +
                 "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
-                "INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID " +
                 "WHERE Seanss.ID = " + a, connect);
 
             adapter = new SqlDataAdapter(cmd);
             DataTable dt_abi = new DataTable();
             adapter.Fill(dt_abi);
 
-            foreach (DataRow nimetus in dt_abi.Rows)
+            foreach (DataRow nimetus in dt_abi.Rows) //Не показывает свободные места
             {
-                int b = int.Parse(nimetus["Kohad"].ToString()) * int.Parse(nimetus["Kohad"].ToString());
-                cmd = new SqlCommand("UPDATE Seans SET VabuKohti = " + b.ToString() + " WHERE Seanss.ID = " + a, connect); //Починить
+                saal.Read = nimetus["Rows"].ToString();
+                saal.Kohad = nimetus["Kohad"].ToString();
+
+                int b = int.Parse(saal.Read) * int.Parse(saal.Kohad);
+
+                connect.Open();
+                cmd = new SqlCommand("UPDATE Seanss SET VabuKohti=" + b.ToString() + " WHERE Seanss.ID = " + a, connect);
+                cmd.ExecuteNonQuery();
+                connect.Close();
             }
 
             cmd = new SqlCommand("SELECT Nimetus, Keel, Kuupaev, Aeg, Pikkus, Saal, VabuKohti FROM Seanss " +
@@ -239,7 +267,7 @@ namespace Kino___Cinema
             DataTable dt = new DataTable();
             adapter.Fill(dt);
 
-            dataGridView = new DataGridView()
+            dataGridView = new DataGridView() //Поработать над оформлением --- Решение: Сделать 2 таблицы
             {
                 Size = new Size(500, 75),
                 DataSource = dt,
@@ -250,7 +278,9 @@ namespace Kino___Cinema
             piletiNimi.Text = "Tavapilet";
 
             Label piletiHind = new Label();
-            piletiHind.Text = "10€";
+            pilet.Hind = "10";
+            piletiHind.Text = pilet.Hind + "€";
+            
 
             Kogus = new Label();
             Kogus.Text = "0";
@@ -268,6 +298,8 @@ namespace Kino___Cinema
             valiKohad.Text = "Vali kohad";
             valiKohad.Click += Button_Click;
 
+            //Плохое оформление + баг с кнопкой
+
             body.Controls.Add(piletiNimi);
             body.Controls.Add(piletiHind);
             body.Controls.Add(minus);
@@ -275,7 +307,6 @@ namespace Kino___Cinema
             body.Controls.Add(plus);
             body.Controls.Add(valiKohad);
         }
-
         void Button_Click(object sender, EventArgs e)
         {
             Button but = (Button)sender;
@@ -309,22 +340,17 @@ namespace Kino___Cinema
                     minus.Enabled = false;
                 }
             }
-            else if (but.Text == "Vali kohad") // Выбор мест --- поставить блокировку если билетов 0
+            else if (but.Text == "Vali kohad") //Выбор мест --- поставить блокировку если выбрано 0 билетов
             {
                 body.Controls.Clear();
-
-                /** Выбор мест */
-                TableLayoutPanel tableLayoutPanel = new TableLayoutPanel()
+                tableLayoutPanel = new TableLayoutPanel()
                 {
                     Size = new Size(480,400),
-                    //BackColor = Color.Orange,
                     CellBorderStyle = TableLayoutPanelCellBorderStyle.Inset,
                     AutoSize = false,
                 };
 
-
-
-                for (int i = 0; i < 10; i++) //int.Parse(nimetus["Read"].ToString())
+                for (int i = 0; i < int.Parse(saal.Read); i++)
                 {
                     tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
 
@@ -347,12 +373,13 @@ namespace Kino___Cinema
                     tableLayoutPanel.Controls.Add(column, i + 1, 0);
                     tableLayoutPanel.Controls.Add(read, 0, i + 1);
 
-                    for (int j = 0; j < 10; j++) //int.Parse(nimetus["Kohad"].ToString())
+                    for (int j = 0; j < int.Parse(saal.Kohad); j++)
                     {
                         tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
 
                         PictureBox pictureBox = new PictureBox()
                         {
+                            Name = (i + 1).ToString() + "-" + (j + 1).ToString(),
                             Size = new Size(25, 25),
                             Image = Image.FromFile(@"../../Images/istukoht.png"),
                             SizeMode = PictureBoxSizeMode.StretchImage,
@@ -365,9 +392,62 @@ namespace Kino___Cinema
                     }
                 }
                 body.Controls.Add(tableLayoutPanel);
+
+                cmd = new SqlCommand("SELECT Koht FROM Piletid WHERE Seanss_ID = " + pilet.Seanss, connect);
+
+                adapter = new SqlDataAdapter(cmd);
+                DataTable dt_abi = new DataTable();
+                adapter.Fill(dt_abi);
+                foreach (DataRow nimetus in dt_abi.Rows)
+                {
+                    List<string> words = nimetus["Koht"].ToString().Split('-').ToList();
+                    //foreach (Control kohad in tableLayoutPanel.Controls)
+                    //{
+
+                    //}
+                    //tableLayoutPanel.RowStyles[int.Parse(words[0])].
+                    //tableLayoutPanel.Controls. //BackColor = Color.Red;
+                    Control red = tableLayoutPanel.GetControlFromPosition(int.Parse(words[0]), int.Parse(words[1]));
+                    red.BackColor = Color.Red;
+                    red.Enabled = false;
+                    //words[0];
+                    //words[1];
+                    words.Clear();
+                }
+
+
+                maksa = new Button();
+                maksa.Text = "Maksa";
+                maksa.Click += Maksa_Click;
+                body.Controls.Add(maksa);
             }
         }
-        void PictureBox_Click(object sender, EventArgs e)
+        void Maksa_Click(object sender, EventArgs e) //Добавить >>> если места не выбраны, то ошибка
+        {
+            foreach (Control kohad in tableLayoutPanel.Controls)
+            {                
+                if (kohad.BackColor == Color.Yellow)
+                {
+                    pilet.Koht = kohad.Name;
+                }
+            }
+            foreach (string kohad in pilet.Kohad)
+            {
+
+                connect.Open();
+                cmd = new SqlCommand("INSERT INTO Piletid(Seanss_ID, Hind, Koht) VALUES(@seanss, @hind, @koht)", connect);
+                cmd.Parameters.AddWithValue("@seanss", pilet.Seanss);
+                cmd.Parameters.AddWithValue("@hind", pilet.Hind);
+                cmd.Parameters.AddWithValue("@koht", kohad);
+                cmd.ExecuteNonQuery();
+                connect.Close();
+
+            }
+
+            pilet.Kohad.Clear();
+            new Form2(this).Show();
+        }
+        void PictureBox_Click(object sender, EventArgs e) //Добавить лимит выбора мест
         {
             PictureBox pilt = (PictureBox)sender;
             if (pilt.BackColor == Color.Green)
@@ -379,58 +459,55 @@ namespace Kino___Cinema
                 pilt.BackColor = Color.Green;
             }
         }
-        void emailSend()
-        {
-            try
-            {
-                SmtpMail oMail = new SmtpMail("TryIt");
+        //void emailSend() //Доделать отправляемый текст в сообщении
+        //{
+        //    try
+        //    {
+        //        SmtpMail oMail = new SmtpMail("TryIt");
 
-                // Your email address
-                oMail.From = "edgar.neverovski@hotmail.com";
+        //        // Your email address
+        //        oMail.From = "edgar.neverovski@hotmail.com";
 
-                // Set recipient email address
-                oMail.To = "edgarneverovskij@gmail.com";
+        //        // Set recipient email address
+        //        oMail.To = email;
 
-                // Set email subject
-                oMail.Subject = "test email from hotmail, outlook, office 365 account";
+        //        // Set email subject
+        //        oMail.Subject = "Apollo kino - pilet";
 
-                // Set email body
-                oMail.TextBody = "this is a test email sent from c# project using hotmail.";
+        //        // Set email body
+        //        oMail.TextBody = "this is a test email sent from c# project using hotmail.";
 
-                // Hotmail/Outlook SMTP server address
-                SmtpServer oServer = new SmtpServer("smtp.office365.com");
+        //        // Hotmail/Outlook SMTP server address
+        //        SmtpServer oServer = new SmtpServer("smtp.office365.com");
 
-                // If your account is office 365, please change to Office 365 SMTP server
-                // SmtpServer oServer = new SmtpServer("smtp.office365.com");
+        //        // If your account is office 365, please change to Office 365 SMTP server
+        //        // SmtpServer oServer = new SmtpServer("smtp.office365.com");
 
-                // User authentication should use your
-                // email address as the user name.
-                oServer.User = "edgar.neverovski@hotmail.com";
+        //        // User authentication should use your
+        //        // email address as the user name.
+        //        oServer.User = "edgar.neverovski@hotmail.com";
 
-                oServer.Password = "qawsedrf1";
+        //        oServer.Password = "qawsedrf1";
 
-                // use 587 TLS port
-                oServer.Port = 587;
+        //        // use 587 TLS port
+        //        oServer.Port = 587;
 
-                // detect SSL/TLS connection automatically
-                oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
+        //        // detect SSL/TLS connection automatically
+        //        oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
 
-                MessageBox.Show("start to send email over TLS...");
+        //        MessageBox.Show("start to send email over TLS...");
 
-                SmtpClient oSmtp = new SmtpClient();
-                oSmtp.SendMail(oServer, oMail);
+        //        SmtpClient oSmtp = new SmtpClient();
+        //        oSmtp.SendMail(oServer, oMail);
 
-                MessageBox.Show("email was sent successfully!");
-            }
-            catch (Exception ep)
-            {
-                MessageBox.Show("failed to send email with the following error:");
-                MessageBox.Show(ep.Message);
-            }
-            /**
-             * edgar.neverovski@hotmail.com
-             * qawsedrf1
-             */
-        }
+        //        MessageBox.Show("email was sent successfully!");
+        //    }
+        //    catch (Exception ep)
+        //    {
+        //        MessageBox.Show("failed to send email with the following error:");
+        //        MessageBox.Show(ep.Message);
+        //    }
+        //    
+        //}
     }
 }
