@@ -8,7 +8,7 @@ namespace Kino___Cinema
 {
     public class Piletid
     {
-        string koht, seanss, hind;
+        string koht, seanss, hind, kogus;
         List<string> kohad = new List<string>();
 
         public string Koht
@@ -33,6 +33,12 @@ namespace Kino___Cinema
         {
             get { return hind; }
             set { hind = value; }
+        }
+
+        public string Kogus
+        {
+            get { return kogus; }
+            set { kogus = value; }
         }
     }
 }

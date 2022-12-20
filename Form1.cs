@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
-//using EASendMail;
+using EASendMail;
 
 namespace Kino___Cinema
 {
@@ -16,8 +16,8 @@ namespace Kino___Cinema
     {
         string[] labelTexts = new string[] { "TOP Cinema", "Kava", "Filmid" };
         int[] fontSizes = new int[] { 30, 15, 15 };
-        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
-        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\opilane\source\repos\Edgar Neverovski TARpv21\Kino\DB\KinoAB.mdf;Integrated Security = True");
+        //public SqlConnection connect = new SqlConnection(@"Data Source = (LocalDB)\MSSQLLocalDB; AttachDbFilename=C:\Users\edgar\source\repos\Kino\DB\KinoAB.mdf;Integrated Security = True");
         SqlCommand cmd;
         SqlDataAdapter adapter;
         DataGridView dataGridView;
@@ -29,7 +29,7 @@ namespace Kino___Cinema
         Saal saal = new Saal();
         Piletid pilet = new Piletid();
 
-        Button maksa;
+        Button maksa, valiKohad;
 
         TableLayoutPanel tableLayoutPanel;
 
@@ -48,7 +48,6 @@ namespace Kino___Cinema
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             
-
             FlowLayoutPanel head = new FlowLayoutPanel
             {
                 Location = new Point(0, 0),
@@ -175,7 +174,6 @@ namespace Kino___Cinema
                         Size = new Size(300, 45),
                         RowHeadersVisible = false,
                         CellBorderStyle = DataGridViewCellBorderStyle.None,
-                        //SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                         Enabled = false,
                         ReadOnly = true,
                         ScrollBars = ScrollBars.None,
@@ -218,7 +216,6 @@ namespace Kino___Cinema
                         Size = new Size(400, 45),
                         RowHeadersVisible = false,
                         CellBorderStyle = DataGridViewCellBorderStyle.None,
-                        //SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                         Enabled = false,
                         ReadOnly = true,
                         ScrollBars = ScrollBars.None,
@@ -236,69 +233,107 @@ namespace Kino___Cinema
             pilet.Seanss = a;
             body.Controls.Clear();
 
-            cmd = new SqlCommand("SELECT Rows, Kohad, VabuKohti FROM Seanss " +
-                "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
-                "WHERE Seanss.ID = " + a, connect);
+            cmd = new SqlCommand("SELECT Rows, Kohad, VabuKohti FROM Seanss INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID WHERE Seanss.ID = " + a, connect);
 
             adapter = new SqlDataAdapter(cmd);
             DataTable dt_abi = new DataTable();
             adapter.Fill(dt_abi);
 
-            foreach (DataRow nimetus in dt_abi.Rows) //Не показывает свободные места
+            foreach (DataRow nimetus in dt_abi.Rows)
             {
                 saal.Read = nimetus["Rows"].ToString();
                 saal.Kohad = nimetus["Kohad"].ToString();
 
                 int b = int.Parse(saal.Read) * int.Parse(saal.Kohad);
 
+                cmd = new SqlCommand("SELECT Koht FROM Piletid WHERE Seanss_ID = " + pilet.Seanss, connect);
+                adapter = new SqlDataAdapter(cmd);
+                DataTable dt3 = new DataTable();
+                adapter.Fill(dt3);
+               
                 connect.Open();
-                cmd = new SqlCommand("UPDATE Seanss SET VabuKohti=" + b.ToString() + " WHERE Seanss.ID = " + a, connect);
+                cmd = new SqlCommand("UPDATE Seanss SET VabuKohti=" + (b - dt3.Rows.Count).ToString() + " WHERE Seanss.ID = " + a, connect);
                 cmd.ExecuteNonQuery();
                 connect.Close();
             }
 
-            cmd = new SqlCommand("SELECT Nimetus, Keel, Kuupaev, Aeg, Pikkus, Saal, VabuKohti FROM Seanss " +
-                "INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID " +
-                "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
-                "INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID " +
-                "WHERE Seanss.ID = " + a, connect);
+            cmd = new SqlCommand("SELECT Nimetus, Keel, Pikkus FROM Seanss INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID WHERE Seanss.ID = " + a, connect);
 
             adapter = new SqlDataAdapter(cmd);
             DataTable dt = new DataTable();
             adapter.Fill(dt);
 
-            dataGridView = new DataGridView() //Поработать над оформлением --- Решение: Сделать 2 таблицы
+            dataGridView = new DataGridView()
             {
-                Size = new Size(500, 75),
+                Size = new Size(300, 45),
+                RowHeadersVisible = false,
+                CellBorderStyle = DataGridViewCellBorderStyle.None,
+                Enabled = false,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.None,
                 DataSource = dt,
+            };
+            body.Controls.Add(dataGridView);
+
+            cmd = new SqlCommand("SELECT Kuupaev, Aeg, Saal, VabuKohti FROM Seanss INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID WHERE Seanss.ID = " + a, connect);
+
+            adapter = new SqlDataAdapter(cmd);
+            DataTable dt2 = new DataTable();
+            adapter.Fill(dt2);
+
+            dataGridView = new DataGridView()
+            {
+                Size = new Size(400, 45),
+                RowHeadersVisible = false,
+                CellBorderStyle = DataGridViewCellBorderStyle.None,
+                Enabled = false,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.None,
+                DataSource = dt2,
             };
             body.Controls.Add(dataGridView);
 
             Label piletiNimi = new Label();
             piletiNimi.Text = "Tavapilet";
+            piletiNimi.Size = new Size(110, 45);
+            piletiNimi.Font = new Font("SimSun", 15, FontStyle.Bold);
 
             Label piletiHind = new Label();
             pilet.Hind = "10";
             piletiHind.Text = pilet.Hind + "€";
-            
+            piletiHind.Size = new Size(100, 45);
+            piletiHind.Font = new Font("SimSun", 15, FontStyle.Bold);
 
             Kogus = new Label();
+            Kogus.Font = new Font("SimSun", 15, FontStyle.Bold);
             Kogus.Text = "0";
+            Kogus.Size = new Size(80,30);
+            pilet.Kogus = Kogus.Text;            
 
             minus = new Button();
             minus.Text = "-";
             minus.Click += Button_Click;
             minus.Enabled = false;
+            minus.Size = new Size(80,30);
+            minus.Font = new Font("SimSun", 15, FontStyle.Bold);
 
             plus = new Button();
             plus.Text = "+";
             plus.Click += Button_Click;
+            plus.Size = new Size(80,30);
+            plus.Font = new Font("SimSun", 15, FontStyle.Bold);
 
-            Button valiKohad = new Button();
+            valiKohad = new Button();
             valiKohad.Text = "Vali kohad";
             valiKohad.Click += Button_Click;
+            valiKohad.Size = new Size(80,30);
 
-            //Плохое оформление + баг с кнопкой
+            if (pilet.Kogus == "0")
+            {
+                valiKohad.Enabled = false;
+            }              
+
+            //Плохое оформление + 2 бага с кнопками
 
             body.Controls.Add(piletiNimi);
             body.Controls.Add(piletiHind);
@@ -313,6 +348,7 @@ namespace Kino___Cinema
             if (Kogus.Text == "0")
             {
                 minus.Enabled = false;
+                valiKohad.Enabled = false;
             }
             else if (Kogus.Text == "5")
             {
@@ -322,11 +358,12 @@ namespace Kino___Cinema
             {
                 minus.Enabled = true;
                 plus.Enabled = true;
+                valiKohad.Enabled = true;
             }
-
             if (but.Text == "+")
             {
                 Kogus.Text = (int.Parse(Kogus.Text) + 1).ToString();
+                pilet.Kogus = Kogus.Text;
                 if (Kogus.Text == "5")
                 {
                     plus.Enabled = false;
@@ -335,12 +372,13 @@ namespace Kino___Cinema
             else if (but.Text == "-")
             {
                 Kogus.Text = (int.Parse(Kogus.Text) - 1).ToString();
+                pilet.Kogus = Kogus.Text;
                 if (Kogus.Text == "0")
                 {
                     minus.Enabled = false;
                 }
             }
-            else if (but.Text == "Vali kohad") //Выбор мест --- поставить блокировку если выбрано 0 билетов
+            else if (but.Text == "Vali kohad")
             {
                 body.Controls.Clear();
                 tableLayoutPanel = new TableLayoutPanel()
@@ -398,23 +436,16 @@ namespace Kino___Cinema
                 adapter = new SqlDataAdapter(cmd);
                 DataTable dt_abi = new DataTable();
                 adapter.Fill(dt_abi);
+
                 foreach (DataRow nimetus in dt_abi.Rows)
                 {
                     List<string> words = nimetus["Koht"].ToString().Split('-').ToList();
-                    //foreach (Control kohad in tableLayoutPanel.Controls)
-                    //{
-
-                    //}
-                    //tableLayoutPanel.RowStyles[int.Parse(words[0])].
-                    //tableLayoutPanel.Controls. //BackColor = Color.Red;
                     Control red = tableLayoutPanel.GetControlFromPosition(int.Parse(words[0]), int.Parse(words[1]));
                     red.BackColor = Color.Red;
                     red.Enabled = false;
-                    //words[0];
-                    //words[1];
                     words.Clear();
                 }
-
+                
 
                 maksa = new Button();
                 maksa.Text = "Maksa";
@@ -425,15 +456,13 @@ namespace Kino___Cinema
         void Maksa_Click(object sender, EventArgs e) //Добавить >>> если места не выбраны, то ошибка
         {
             foreach (Control kohad in tableLayoutPanel.Controls)
-            {                
+            {  
                 if (kohad.BackColor == Color.Yellow)
-                {
                     pilet.Koht = kohad.Name;
-                }
+                
             }
             foreach (string kohad in pilet.Kohad)
             {
-
                 connect.Open();
                 cmd = new SqlCommand("INSERT INTO Piletid(Seanss_ID, Hind, Koht) VALUES(@seanss, @hind, @koht)", connect);
                 cmd.Parameters.AddWithValue("@seanss", pilet.Seanss);
@@ -441,15 +470,13 @@ namespace Kino___Cinema
                 cmd.Parameters.AddWithValue("@koht", kohad);
                 cmd.ExecuteNonQuery();
                 connect.Close();
-
-            }
-
-            pilet.Kohad.Clear();
-            new Form2(this).Show();
+            }                        
+            new Form2(this).Show();           
         }
         void PictureBox_Click(object sender, EventArgs e) //Добавить лимит выбора мест
         {
             PictureBox pilt = (PictureBox)sender;
+
             if (pilt.BackColor == Color.Green)
             {
                 pilt.BackColor = Color.Yellow;
@@ -459,55 +486,59 @@ namespace Kino___Cinema
                 pilt.BackColor = Color.Green;
             }
         }
-        //void emailSend() //Доделать отправляемый текст в сообщении
-        //{
-        //    try
-        //    {
-        //        SmtpMail oMail = new SmtpMail("TryIt");
+        public void emailSend()
+        {
+            try
+            {
+                SmtpMail oMail = new SmtpMail("TryIt");
+                oMail.From = "edgar.neverovski@hotmail.com";
+                oMail.To = email;
+                oMail.Subject = "Apollo kino - pilet";
 
-        //        // Your email address
-        //        oMail.From = "edgar.neverovski@hotmail.com";
+                cmd = new SqlCommand("SELECT Nimetus, Kuupaev, Aeg, Saal FROM Seanss " +
+                "INNER JOIN Filmid ON Seanss.Filmid_ID = Filmid.ID " +
+                "INNER JOIN Saalid ON Seanss.Saalid_ID = Saalid.ID " +
+                "INNER JOIN Tunniplaan ON Seanss.Tunniplaan_ID = Tunniplaan.ID " +
+                "WHERE Seanss.ID = " + pilet.Seanss, connect);
 
-        //        // Set recipient email address
-        //        oMail.To = email;
+                adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
 
-        //        // Set email subject
-        //        oMail.Subject = "Apollo kino - pilet";
+                foreach (DataRow nimetus in dt.Rows)
+                {
+                    string a = "";
+                    foreach (string kohad in pilet.Kohad)
+                    {
+                        a += kohad;
+                    }
+                    oMail.TextBody = "Film: " + nimetus["Nimetus"].ToString() 
+                        + "\nKuupäev: " + nimetus["Kuupaev"].ToString() 
+                        + "\nAeg: " + nimetus["Aeg"].ToString() 
+                        + "\nSaal: " + nimetus["Saal"].ToString() 
+                        + "\nRida - Koht: " + a 
+                        + "\nHind: " + pilet.Hind + "€";
+                }
+                pilet.Kohad.Clear();
 
-        //        // Set email body
-        //        oMail.TextBody = "this is a test email sent from c# project using hotmail.";
+                SmtpServer oServer = new SmtpServer("smtp.office365.com");
+                oServer.User = "edgar.neverovski@hotmail.com";
+                oServer.Password = "qawsedrf1";
+                oServer.Port = 587;
+                oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
+                MessageBox.Show("start to send email over TLS...");
 
-        //        // Hotmail/Outlook SMTP server address
-        //        SmtpServer oServer = new SmtpServer("smtp.office365.com");
+                SmtpClient oSmtp = new SmtpClient();
+                oSmtp.SendMail(oServer, oMail);
 
-        //        // If your account is office 365, please change to Office 365 SMTP server
-        //        // SmtpServer oServer = new SmtpServer("smtp.office365.com");
+                MessageBox.Show("email was sent successfully!");
+            }
+            catch (Exception ep)
+            {
+                MessageBox.Show("failed to send email with the following error:");
+                MessageBox.Show(ep.Message);
+            }
 
-        //        // User authentication should use your
-        //        // email address as the user name.
-        //        oServer.User = "edgar.neverovski@hotmail.com";
-
-        //        oServer.Password = "qawsedrf1";
-
-        //        // use 587 TLS port
-        //        oServer.Port = 587;
-
-        //        // detect SSL/TLS connection automatically
-        //        oServer.ConnectType = SmtpConnectType.ConnectSSLAuto;
-
-        //        MessageBox.Show("start to send email over TLS...");
-
-        //        SmtpClient oSmtp = new SmtpClient();
-        //        oSmtp.SendMail(oServer, oMail);
-
-        //        MessageBox.Show("email was sent successfully!");
-        //    }
-        //    catch (Exception ep)
-        //    {
-        //        MessageBox.Show("failed to send email with the following error:");
-        //        MessageBox.Show(ep.Message);
-        //    }
-        //    
-        //}
+        }
     }
 }

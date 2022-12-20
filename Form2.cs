@@ -50,6 +50,7 @@ namespace Kino___Cinema
                 form1.Email = textBox.Text;
                 form1.body.Controls.Clear();
                 form1.body.BackgroundImage = Image.FromFile(@"../../Images/Logo.png");
+                form1.emailSend();
                 this.Close();
             }
         }
